@@ -2,6 +2,7 @@
 
 # go insists on absolute path.
 export GOBIN=`pwd`/dist
+export GOPKG=`pwd`/pkg
 export DISTDIR=`pwd`/dist
 export GOPATH=`pwd`
 echo "GOPATH=$GOPATH"
