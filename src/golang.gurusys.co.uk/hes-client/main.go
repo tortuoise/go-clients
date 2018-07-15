@@ -27,6 +27,7 @@ var (
 	apiHes = "https://api.gurusys.co.uk/api/v2/"
         help = flag.Bool("help", false, "prints this message")
         login = flag.Bool("login", false, "use api_key to get & save access token")
+        loginas = flag.String("loginas", "", "use api_key of client to get & save access token")
         ping = flag.Bool("ping", false, "use access token to ping hes")
         debug = flag.Bool("debug", false, "set to true for debug info")
         path = flag.String("path", "clients", "set to desired api path, eg. path=clients")
@@ -76,6 +77,12 @@ func main() {
         } else if *login {
                 fmt.Println("Logging in ...")
                 *path = "tokens"
+        } else if *loginas != "" {
+                _, err := hes.Asset("static/apiKeys")
+                if err != nil {
+                        fmt.Println(err)
+                        os.Exit(1)
+                }
         } else {
 
         }
