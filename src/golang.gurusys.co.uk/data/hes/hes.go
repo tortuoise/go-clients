@@ -9,6 +9,10 @@ type ApiKey struct {
 	Api_key          string `json:"api_key,omitempty"`
 }
 
+type AccessToken struct {
+	Access_token          string `json:"access_token,omitempty"`
+}
+
 type HesClientsResp struct {
         Links map[string]string `json:"_links",omitempty"`
         Clients []HesClient `json:"clients",omitempty"`

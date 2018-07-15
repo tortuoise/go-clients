@@ -1,19 +1,20 @@
 package main
 
 import (
-    "bytes"
-    "compress/gzip"
-    "errors"
+        "bytes"
+        "compress/gzip"
+        "errors"
         "flag"
         "fmt"
-    "net/http"
-    _"io/ioutil"
-    "encoding/json"
+        _"encoding/gob"
+        "net/http"
+        "io/ioutil"
+        "encoding/json"
         "os"
-    "sort"
-    "strconv"
-    _"sync"
-    "time"
+        "sort"
+        "strconv"
+        _"sync"
+        "time"
 
         "golang.gurusys.co.uk/data/hes"
         "golang.gurusys.co.uk/data"
@@ -22,17 +23,31 @@ import (
 
 var (
         err error
+        hestkn = "src/golang.gurusys.co.uk/data/hes/static/accessToken"
 	apiHes = "https://api.gurusys.co.uk/api/v2/"
-        help = flag.Bool("help", false, "prints help info")
-        login = flag.Bool("login", false, "use api_key to get & save token")
-        ping = flag.Bool("ping", false, "use api_key to get & save token")
-        debug = flag.Bool("debug", false, "true for debug info")
-        path = flag.String("path", "clients", "get what?")
+        help = flag.Bool("help", false, "prints this message")
+        login = flag.Bool("login", false, "use api_key to get & save access token")
+        ping = flag.Bool("ping", false, "use access token to ping hes")
+        debug = flag.Bool("debug", false, "set to true for debug info")
+        path = flag.String("path", "clients", "set to desired api path, eg. path=clients")
 )
+
 func main() {
         flag.Parse()
+        if flag.NFlag() >=2 { // if number of flags >=2 then one of them must be -debug
+                if flag.NFlag() == 2 {
+                        if !*debug {
+                                fmt.Println("Too many flags. Usage: ")
+                                os.Exit(1)
+                        }
+                } else {
+                        fmt.Println("Too many flags. Usage: ")
+                        os.Exit(1)
+                }
+        }
         if *help {
                 fmt.Println("Guru Clients ...")
+                flag.PrintDefaults()
                 os.Exit(1)
         }
 
@@ -47,7 +62,7 @@ func main() {
                 fmt.Println(err)
                 os.Exit(1)
         }
-        at = at[0:len(at)-1]
+        //at = at[0:len(at)-1]
 
         kb,err := json.Marshal(hes.ApiKey{string(raw)})
         if err != nil {
@@ -56,7 +71,7 @@ func main() {
         }
 
         if *ping {
-                fmt.Println("Pinging ...")
+                fmt.Println("Pinging hes ...")
                 *path = "ping"
         } else if *login {
                 fmt.Println("Logging in ...")
@@ -65,7 +80,7 @@ func main() {
 
         }
 
-        c, _ := data.RedisConn()
+        c := data.P.Get() //c, _ := data.RedisConn()
         defer c.Close()
 
         hesLive := []byte(apiHes)
@@ -111,7 +126,12 @@ func main() {
                         _,_ = bod.Read(test)
                         fmt.Fprintf(os.Stderr,"%v\n", string(test))
                 } else {
-                        hes.SetAccessHeaders(req, string(at))
+                        ato := &hes.AccessToken{}
+                        if err = json.Unmarshal(at, ato); err != nil {
+                                fmt.Println("Unmarshal access token error: ", err)
+                                os.Exit(1)
+                        }
+                        hes.SetAccessHeaders(req, ato.Access_token) //hes.SetAccessHeaders(req, string(at))
                 }
                 if err != nil {
                         errChan <- err
@@ -175,6 +195,7 @@ func main() {
         case bs := <-respChan:
                 switch *path {
                 case "tokens":
+                        ioutil.WriteFile(hestkn, bs, os.ModePerm)
                         fmt.Println(string(bs))
                 case "ping":
                         fmt.Println(string(bs))
@@ -201,7 +222,7 @@ func main() {
         for _, hc := range hcs {
             fmt.Println("Clients...")
             fmt.Println(hc.String())
-                //c.Do("APPEND", 
+            //c.Do("SET", 
         }
 
 }

@@ -5,6 +5,7 @@ export GOBIN=`pwd`/dist
 export GOPKG=`pwd`/pkg
 export DISTDIR=`pwd`/dist
 export GOPATH=`pwd`
+export DEVOS=linux
 echo "GOPATH=$GOPATH"
 
 # space seperated packages
@@ -28,6 +29,9 @@ buildall() {
     for pkg in ${PACKAGES}; do
 	echo ${pkg}
 	echo ${GOPATH}
+	echo testing
+	MYSRC=golang.gurusys.co.uk/${pkg}
+	go test ${MYSRC}
 	MYSRC=src/golang.gurusys.co.uk/${pkg}
 	( cd ${MYSRC} && make all ) || exit 10
     done
@@ -54,12 +58,13 @@ export GOARCH=amd64
 if [ ! -z "${DEVOS}" ]; then
     GOOS=${DEVOS}
     buildall
+	testall
     finishhook
     exit 0
 fi
 
 #========= build linux
-export GOOS=linux ; buildall
+export GOOS=linux ; buildall; testall
 
 #========= build mac
 export GOOS=darwin ; buildall

@@ -1,37 +1,31 @@
 package getter
 
 import (
-    "bytes"
-    "compress/gzip"
-    "encoding/json"
-    "errors"
-    "fmt"
-    "net/http"
+    _"bytes"
+    _"compress/gzip"
+    _"encoding/json"
+    _"errors"
+    _"fmt"
+    _"net/http"
 	_ "reflect"
 	"testing"
 	_ "time"
     _"io/ioutil"
-    "strconv"
-    "sort"
-    "sync"
-    "time"
+    _"strconv"
+    _"sort"
+    _"sync"
+    _"time"
 
-    "github.com/tortuoise/aclient/nse"
 )
 
 var (
     err error
-	nsef = "https://nseindia.com/live_market/dynaContent/live_watch/get_quote/ajaxFOGetQuoteJSON.jsp?underlying=NIFTY&instrument=FUTIDX&type=-&strike=-&expiry="
-	nsef1 = "https://nseindia.com/live_market/dynaContent/live_watch/get_quote/ajaxFOGetQuoteJSON.jsp?underlying=NIFTY&instrument=FUTIDX&expiry="
-	nses = "https://nseindia.com/live_market/dynaContent/live_watch/get_quote/ajaxFOGetQuoteJSON.jsp?underlying="
-	nses1 = "&instrument=FUTSTK&expiry="
-	nses2 = "&type=SELECT&strike=SELECT"
 	getter *HttpMultiGetter
 )
 
 func TestHttpGet(t *testing.T) {
 
-        nseLive1 := []byte(nsef1)
+        /*nseLive1 := []byte(nsef1)
         nses2b := []byte(nses2)
         var xprs [][]byte
         //_,x1 := nse.X1()
@@ -60,13 +54,13 @@ func TestHttpGet(t *testing.T) {
         if getter.Ubs != nil {
                 t.Errorf("Bytes: %v", getter.Display())
         }
-        }
+        }*/
 
 }
 
 func TestHttpGoGet(t *testing.T) {
 
-        nseLive1 := []byte(nsef)
+        /*nseLive1 := []byte(nsef)
         var xprs [][]byte
         _,x1 := nse.X1()
         _,x2 := nse.X2()
@@ -91,14 +85,14 @@ func TestHttpGoGet(t *testing.T) {
         }
         if getter.Ubs != nil {
                 t.Errorf("Bytes: %v", getter.Display())
-        }
+        }*/
 
 }
 
 //ExampleHttMultiGet demonstrates how to make multiple http requests using goroutines using a single client/transport. go test -run HttpMultiGet github.com/tortuoise/aclient
 func ExampleHttpMultiGet() {
 
-        nseLive := []byte(nses)
+        /*nseLive := []byte(nses)
         //raw, err := ioutil.ReadFile("nse_prtfl")
         raw, err := nse.Asset("static/nse_prtfl")
         if err != nil {
@@ -217,7 +211,7 @@ func ExampleHttpMultiGet() {
         // Output: Varies
         // Varies
         // And varies some more
-
+        */
 }
 
 /*
