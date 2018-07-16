@@ -1,6 +1,7 @@
 package main
 
 import (
+        "bufio"
         _"bytes"
         _"compress/gzip"
         _"errors"
@@ -38,16 +39,50 @@ func main() {
 
         flag.Parse()
 
-        for {
+        cmds := make(chan string, 1)
+        resp := make(chan string, 1)
+        go func() {
+        execute:
+                a:=<-cmds
+                ab := []byte(a)
+                a = string(ab[0:len(ab)-1])
+                if a == "exit" {
+                        fmt.Printf("exiting %s\n", a)
+                        resp<-"done"
+                        return
+                }
+                fmt.Printf("executing %s\n", a)
+                resp<-"done"+a
+                goto execute
+
+        }()
+read:
+        reader := bufio.NewReader(os.Stdin)
+        fmt.Print("Cmd: ")
+        cmd, _ := reader.ReadString('\n')
+        cmds<-cmd
+        //for {
                 select {
+                case r:=<-resp:
+                        if r=="done" {
+                                fmt.Printf("Done: %s\n", r)
+                                goto end //return
+                        }
+                        fmt.Println(r)
                 case <-interruptChan:
+                        cmds<-"exit"
                         goto end
-                case <-time.After(5000 * time.Millisecond):
+                case <-time.After(20 * time.Second):
+                        cmds<-"exit"
                         fmt.Println("Timeout: timed out")
                         goto end
                 }
-        }
+        //}
+        goto read
 
 end:
+        close(cmds)
+        close(resp)
+        close(interruptChan)
 
 }
