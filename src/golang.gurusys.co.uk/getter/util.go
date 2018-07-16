@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+        "os/signal"
+        "syscall"
 )
 
 func FatalCheck(err error) {
@@ -21,4 +23,8 @@ func FilterIPV4(ips []net.IP) []string {
 		}
 	}
 	return ret
+}
+
+func SignalNotify(interrupt chan<- os.Signal) {
+        signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 }

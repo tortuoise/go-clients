@@ -33,7 +33,7 @@ func init() {
         fmt.Println("Pinging redis ...")
         P = newPool(*redisServer)
 	c := P.Get()
-	//c.Send("SELECT" , 2)
+	c.Send("SELECT" , 1)
 	//c.Send("FLUSHDB")
         r, err := redis.String(c.Do("PING"))
 	if r != "PONG" || err != nil {

@@ -6,11 +6,12 @@ import (
         "errors"
         "flag"
         "fmt"
-        _"encoding/gob"
+        "encoding/gob"
         "net/http"
         "io/ioutil"
         "encoding/json"
         "os"
+        _"os/signal"
         "sort"
         "strconv"
         _"sync"
@@ -24,6 +25,7 @@ import (
 var (
         err error
         hestkn = "src/golang.gurusys.co.uk/data/hes/static/accessToken"
+        keys = make(map[string]hes.ApiKey)
 	apiHes = "https://api.gurusys.co.uk/api/v2/"
         help = flag.Bool("help", false, "prints this message")
         login = flag.Bool("login", false, "use api_key to get & save access token")
@@ -34,6 +36,8 @@ var (
 )
 
 func main() {
+        interruptChan := make(chan os.Signal, 1)
+        getter.SignalNotify(interruptChan)
         flag.Parse()
         if flag.NFlag() >=2 { // if number of flags >=2 then one of them must be -debug
                 if flag.NFlag() == 2 {
@@ -78,11 +82,26 @@ func main() {
                 fmt.Println("Logging in ...")
                 *path = "tokens"
         } else if *loginas != "" {
-                _, err := hes.Asset("static/apiKeys")
+                bs, err := hes.Asset("static/apiKeys")
                 if err != nil {
                         fmt.Println(err)
                         os.Exit(1)
                 }
+                if err = json.Unmarshal(bs, &keys); err != nil {
+                        fmt.Println("Json Keys: ", err)
+                        os.Exit(1)
+                }
+                if _, ok := keys[*loginas]; !ok {
+                        fmt.Println("No such client")
+                        os.Exit(1)
+                }
+                kb, err = json.Marshal(keys[*loginas])
+                if err != nil {
+                        fmt.Println(err)
+                        os.Exit(1)
+                }
+                *path = "tokens"
+                fmt.Println("Logging in with: ", string(kb))
         } else {
 
         }
@@ -108,13 +127,33 @@ func main() {
                         fmt.Println("url: ", string(url))
                 }
         case "clients":
-                //url = append(hesLive, *path...)
-                url = append(hesLive, "clients?page=2&limit=50"...)
+                url = append(hesLive, *path...)
+                //url = append(hesLive, "clients?page=2&limit=50"...)
                 if *debug {
                         fmt.Println("url: ", string(url))
                 }
         case "client":
-                url = append(hesLive, "clients/2"...)
+                url = append(hesLive, "clients/5"...)
+                if *debug {
+                        fmt.Println("url: ", string(url))
+                }
+        case "sites":
+                url = append(hesLive, "clients/5/sites"...)
+                if *debug {
+                        fmt.Println("url: ", string(url))
+                }
+        case "site":
+                url = append(hesLive, "sites/192"...)
+                if *debug {
+                        fmt.Println("url: ", string(url))
+                }
+        case "cgateways":
+                url = append(hesLive, "clients/5/gateways"...)
+                if *debug {
+                        fmt.Println("url: ", string(url))
+                }
+        case "gateways":
+                url = append(hesLive, "gateways"...)
                 if *debug {
                         fmt.Println("url: ", string(url))
                 }
@@ -124,7 +163,7 @@ func main() {
         }
         go func(url string) {
                 req, err := http.NewRequest("GET", url, nil)
-                if *login {
+                if *login || *loginas != "" {
                         br := bytes.NewReader(kb)
                         req, err = http.NewRequest("POST", url, br)
                         hes.SetLoginHeaders(req)
@@ -157,7 +196,7 @@ func main() {
                         if err != nil {
                                 //errChan <- err
                                 errChan <- errors.New("Strconv"+err.Error())
-                                return
+                                icl = 100//return
                         }
                         ubs := make([]byte, icl*3)
                         ct := resp.Header.Get(getter.ContentTypeHeader)
@@ -193,44 +232,86 @@ func main() {
                 doneChan<- true
         }(string(url))
 
-        hcr := &hes.HesClientsResp{}
-        select {
-        case <-doneChan:
-                fmt.Println("Done: ")
-        case err = <-errChan:
-                fmt.Println("Error: ", err)
-        case bs := <-respChan:
-                switch *path {
-                case "tokens":
-                        ioutil.WriteFile(hestkn, bs, os.ModePerm)
-                        fmt.Println(string(bs))
-                case "ping":
-                        fmt.Println(string(bs))
-                case "clients":
-                        fmt.Println("Unmarshaling")
-                        err := json.Unmarshal(bs, hcr)
-                        if err != nil {
-                                fmt.Println(err)
-                                errChan <- err
-                                return
+        for {
+                select {
+                case <-interruptChan:
+                        goto end
+                case <-doneChan:
+                        fmt.Println("Done: ")
+                case err = <-errChan:
+                        fmt.Println("Error: ", err)
+                case bs := <-respChan:
+                        switch *path {
+                        case "tokens":
+                                ioutil.WriteFile(hestkn, bs, os.ModePerm)
+                                fmt.Println(string(bs))
+                        case "ping":
+                                fmt.Println(string(bs))
+                        case "clients":
+                                fmt.Println("Unmarshaling clients... ")
+                                hcr := &hes.HesClientsResp{}
+                                err := json.Unmarshal(bs, hcr)
+                                if err != nil {
+                                        fmt.Println(err)
+                                        errChan <- err
+                                        //return
+                                }
+                                hcs := hes.HesClients(hcr.Clients)
+                                sort.Sort(hcs)
+                                for _, hc := range hcs {
+                                        fmt.Println("Saving client ", hc.Name)
+                                        var bb bytes.Buffer
+                                        enc := gob.NewEncoder(&bb)
+                                        if err = enc.Encode(hc); err != nil {
+                                                fmt.Println("Client gob encode ", err)
+                                        }
+                                        c.Do("SET", hc.Name, bb.Bytes())
+                                }
+                                break
+                        case "sites":
+                                fmt.Println("Unmarshaling sites... ")
+                                hsr := &hes.HesSitesResp{}
+                                err := json.Unmarshal(bs, hsr)
+                                if err != nil {
+                                        //fmt.Println(err)
+                                        errChan <- err
+                                        // return
+                                }
+                                hss := hes.HesSites(hsr.Sites)
+                                sort.Sort(hss)
+                                for _, hs := range hss {
+                                    fmt.Println("Sites...")
+                                    fmt.Println(hs.String())
+                                    //c.Do("SET", 
+                                }
+                        case "gateways","cgateways" :
+                                fmt.Println("Unmarshaling gateways... ")
+                                hgr := &hes.HesGatewaysResp{}
+                                err := json.Unmarshal(bs, hgr)
+                                if err != nil {
+                                        //fmt.Println(err)
+                                        errChan <- err
+                                        // return
+                                }
+                                hgs := hes.HesGateways(hgr.Gateways)
+                                sort.Sort(hgs)
+                                for _, hg := range hgs {
+                                    fmt.Println("Gateways...")
+                                    fmt.Println(hg.String())
+                                    //c.Do("SET", 
+                                }
+                        default:
+                                fmt.Println(string(bs))
                         }
+                case <-time.After(5000 * time.Millisecond):
+                        fmt.Println("Timeout: timed out")
+                        goto end
                 }
-        case <-time.After(5000 * time.Millisecond):
-                fmt.Println("Timeout: timed out")
         }
-
+end:
         close(doneChan)
         close(errChan)
         close(respChan)
-
-        fmt.Println(hcr)
-        hcs := hes.HesClients(hcr.Clients)
-        sort.Sort(hcs)
-        for _, hc := range hcs {
-            fmt.Println("Clients...")
-            fmt.Println(hc.String())
-            //c.Do("SET", 
-        }
 
 }
 
