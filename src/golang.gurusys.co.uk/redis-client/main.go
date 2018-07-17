@@ -26,9 +26,6 @@ import (
 
 var (
         err error
-	url = "https://api.prosperworks.com/developer_api/v1/"
-        keys = make(map[string]pw.ApiKey)
-        search = "/search"
         help = flag.Bool("help", false, "prints this message")
         ping = flag.Bool("ping", false, "use access token to ping hes")
         debug = flag.Bool("debug", false, "set to true for debug info")
@@ -42,15 +39,6 @@ func main() {
 
         flag.Parse()
 
-        raw, err := pw.Asset("static/apiKey")
-        if err != nil {
-                fmt.Println("Api key: ", err)
-                os.Exit(1)
-        }
-        if err = json.Unmarshal(raw, &keys); err != nil {
-                fmt.Println("Api key json: ", err)
-                os.Exit(1)
-        }
         cmds := make(chan string, 1)
         resc := make(chan []byte, 1)
         errc := make(chan error, 1)

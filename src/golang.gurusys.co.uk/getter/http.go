@@ -26,6 +26,7 @@ var (
 	ContentTypeHeader   = "Content-Type"
 	acceptRangesHeader  = "Accept-Ranges"
 	status              = "Status"
+        PwResponseHeader    = "X-Pw-Total"
 	mu                  = &sync.Mutex{}
 )
 

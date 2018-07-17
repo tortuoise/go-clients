@@ -66,7 +66,7 @@ type Person struct {
         Emails []Email `json:"emails,omitempty"`
         Phones []Phone `json:"phone_numbers,omitempty"`
         LAddress Address `json:"address,omitempty"`
-        Company_id string `json:"company_id,omitempty"`
+        Company_id int64 `json:"company_id,omitempty"`
         Company_name string `json:"company_name,omitempty"`
         Details string `json:"details,omitempty"`
         Assignee_id int64 `json:"assignee_id,omitempty"`
@@ -105,7 +105,7 @@ func (c *Companies) String() string {
 type Opportunity struct {
         Id int64 `json:"id,omitempty"`
         Name string `json:"name,omitempty"`
-        Company_id string `json:"company_id,omitempty"`
+        Company_id int64 `json:"company_id,omitempty"`
         Company_name string `json:"company_name,omitempty"`
         Details string `json:"details,omitempty"`
         Assignee_id int64 `json:"assignee_id,omitempty"`
@@ -122,7 +122,10 @@ func (o *Opportunities) String() string {
 	return fmt.Sprintf(" %10s %10s %10s %10s %10s %10s %10s \n", "Id", "Name", "Company", "Close_date", "Monetary_value", "Details", "Assignee")
 }
 
-type Custom_field map[int64]interface{}
+type Custom_field struct { //map[int64]interface{}
+        Definition_id int64 `json:"custom_field_definition_id,omitempty"`
+        Value interface{} `json:"value,omitempty"`
+}
 
 type Project struct {
         Id int64 `json:"id,omitempty"`
@@ -132,13 +135,17 @@ type Project struct {
         Status string `json:"status,omitempty"`
         Date_created int64 `json:"date_created,omitempty"`
         Date_modified int64 `json:"date_modified,omitempty"`
-        Custom_fields Custom_field `json:"custom_fields,omitempty"`
+        Custom_fields []Custom_field `json:"custom_fields,omitempty"`
+}
+
+func (p *Project) String() string {
+        return fmt.Sprintf(" %10d %10s %10d %10d %10s %10s %10d \n", p.Id, p.Name, p.Date_created, p.Date_modified, p.Status, p.Details, p.Assignee_id, /*l.Customer_source_id*/)
 }
 
 type Projects []Project
 
 func (p *Projects) String() string {
-	return fmt.Sprintf(" %10s %10s %10s %10s %10s %10s %10s \n", "Id", "Name", "Date_created", "Date_modified", "Status", "Details", "Assignee")
+	return fmt.Sprintf("%10s %10s %10s %10s %10s %10s %10s \n", "Id", "Name", "Date_created", "Date_modified", "Status", "Details", "Assignee")
 }
 
 type Task struct {
@@ -153,8 +160,13 @@ type Task struct {
         Status string `json:"status,omitempty"`
         Date_created int64 `json:"date_created,omitempty"`
         Date_modified int64 `json:"date_modified,omitempty"`
-        Custom_fields Custom_field `json:"custom_fields,omitempty"`
+        Custom_fields []Custom_field `json:"custom_fields,omitempty"`
 }
+
+func (t *Task) String() string {
+        return fmt.Sprintf(" %10d %10s %10d %10d %10s %10s %10d \n", t.Id, t.Name, t.Date_created, t.Date_modified, t.Status, t.Details, t.Assignee_id, /*l.Customer_source_id*/)
+}
+
 type Tasks []Task
 
 func (t *Tasks) String() string {
@@ -169,6 +181,11 @@ type Activity struct {
         User_id int64 `json:"user_id,omitempty"`
         Activity_date int64 `json:"activity_date,omitempty"`
 }
+
+func (o *Activity) String() string {
+        return fmt.Sprintf(" %10d %10s %10d %10d %10s \n", o.Id, o.Type, o.User_id, o.Activity_date, o.Details)
+}
+
 type Activities []Activity
 
 func (a *Activities) String() string {

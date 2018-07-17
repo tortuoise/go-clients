@@ -265,6 +265,7 @@ func main() {
                                         if err = enc.Encode(hc); err != nil {
                                                 fmt.Println("Client gob encode ", err)
                                         }
+                                        c.Send("SELECT", 1)
                                         c.Do("SET", hc.Name, bb.Bytes())
                                 }
                                 break
